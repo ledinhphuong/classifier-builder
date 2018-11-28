@@ -5,11 +5,11 @@ import numpy as np
 import tensorflow as tf
 
 
-def load_graph(model_file):
+def load_graph(graph_file):
   graph = tf.Graph()
   graph_def = tf.GraphDef()
 
-  with open(model_file, "rb") as f:
+  with open(graph_file, "rb") as f:
     graph_def.ParseFromString(f.read())
   with graph.as_default():
     tf.import_graph_def(graph_def)
@@ -17,21 +17,21 @@ def load_graph(model_file):
   return graph
 
 
-def read_tensor_from_image_file(file_name,
+def read_tensor_from_image_file(image_file,
                                 input_height=299,
                                 input_width=299,
                                 input_mean=0,
                                 input_std=255):
   input_name = "file_reader"
   output_name = "normalized"
-  file_reader = tf.read_file(file_name, input_name)
-  if file_name.endswith(".png"):
+  file_reader = tf.read_file(image_file, input_name)
+  if image_file.endswith(".png"):
     image_reader = tf.image.decode_png(
         file_reader, channels=3, name="png_reader")
-  elif file_name.endswith(".gif"):
+  elif image_file.endswith(".gif"):
     image_reader = tf.squeeze(
         tf.image.decode_gif(file_reader, name="gif_reader"))
-  elif file_name.endswith(".bmp"):
+  elif image_file.endswith(".bmp"):
     image_reader = tf.image.decode_bmp(file_reader, name="bmp_reader")
   else:
     image_reader = tf.image.decode_jpeg(
@@ -56,12 +56,10 @@ def load_labels(label_file):
 
 
 if __name__ == "__main__":
-  current_dir = os.path.dirname(os.path.realpath(__file__))
-  classifier_data_dir = os.path.join(current_dir, 'testai_model')
+  graph_file = None
+  label_file = None
+  image_file = None
 
-  file_name = None
-  model_file = os.path.join(classifier_data_dir, 'saved_model.pb')
-  label_file = os.path.join(classifier_data_dir, 'saved_model.pbtxt')
   input_height = 224
   input_width = 224
   input_mean = 0
@@ -71,19 +69,35 @@ if __name__ == "__main__":
   output_layer = "final_result"
 
   parser = argparse.ArgumentParser()
-  parser.add_argument("--image", help="image to be processed")
+  parser.add_argument("--graph", help="graph file to be used")
+  parser.add_argument("--label", help="label file to be used")
+  parser.add_argument("--image", help="image file to be processed")
   args = parser.parse_args()
 
-  if args.image:
-    file_name = args.image
+  if args.graph:
+    graph_file = args.graph
 
-  if file_name is None:
+  if graph_file is None:
+    print ('ERROR! Need classifier graph file to run prediction on. Please add --graph <path_to_file.pb>')
+    exit(1)
+
+  if args.label:
+    label_file = args.label
+
+  if label_file is None:
+    print ('ERROR! Need classifier label file to run prediction on. Please add --label <path_to_file.pbtxt>')
+    exit(1)
+
+  if args.image:
+    image_file = args.image
+
+  if image_file is None:
     print ('ERROR! Need image to run prediction on. Please add --image <path_to_file>')
     exit(1)
 
-  graph = load_graph(model_file)
+  graph = load_graph(graph_file)
   t = read_tensor_from_image_file(
-      file_name,
+      image_file,
       input_height=input_height,
       input_width=input_width,
       input_mean=input_mean,

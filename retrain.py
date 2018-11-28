@@ -1014,6 +1014,7 @@ def main(_):
       FLAGS.random_brightness)
 
   # Set up the pre-trained graph.
+  tf.logging.info('Using model: ' + FLAGS.tfhub_module)
   module_spec = hub.load_module_spec(FLAGS.tfhub_module)
   graph, bottleneck_tensor, resized_image_tensor, wants_quantization = (
       create_module_graph(module_spec))
@@ -1330,4 +1331,14 @@ if __name__ == '__main__':
       default='',
       help='Where to save the exported graph.')
   FLAGS, unparsed = parser.parse_known_args()
+
+  start_date = datetime.now()
+  print(">>> Start at {}\n".format(start_date))
+
   tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+
+  end_date = datetime.now()
+  print("\n>>> End at {}".format(end_date))
+
+  diff = end_date - start_date
+  print("Retraining duration: {}".format(diff))
